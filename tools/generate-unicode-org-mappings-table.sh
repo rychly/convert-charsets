@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 URL_BASE="https://www.unicode.org/Public/MAPPINGS/"
 URL_FILE="${1}"	# e.g. "VENDORS/MICSFT/WINDOWS/CP1250.TXT"
@@ -11,7 +11,7 @@ if ! echo "${MAPPING}" | grep -q "Table format: \+Format A"; then
 	exit 1
 fi
 
-FILE=${URL_FILE##*/} NAME=${FILE%.*}
+FILE=${URL_FILE##*/} BASENAME=${FILE%.*} NAME=${BASENAME//-/_}
 
 echo "local mapping_${NAME}_to_UNICODE = {"
 
@@ -19,7 +19,7 @@ echo "${MAPPING}" | while read LINE; do
 	[[ "${LINE:0:1}" = "#" ]] && continue
 	CHAR_NATIVE=$(echo "${LINE}" | cut -f 1)
 	CHAR_UNICODE=$(echo "${LINE}" | cut -f 2)
-	CHAR_NAME=$(echo "${LINE}" | cut -d "#" -f 2)
+	CHAR_NAME=$(echo "${LINE}" | cut -d "#" -f 2 | sed 's/^\s\+//g')
 	[[ "${CHAR_UNICODE:0:2}" != "0x" ]] && continue
 	#printf "CHAR_NATIVE=\\x${CHAR_NATIVE:2:2}\n"	# debug
 	#printf "CHAR_UNICODE=\\x${CHAR_UNICODE:2:2}\\x${CHAR_UNICODE:4:2}\n"	# debug

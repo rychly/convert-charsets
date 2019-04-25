@@ -68,3 +68,8 @@ function string.toutf8(native_string, unicode_mapping_table)
 	end
 	return table_concat(result_utf8)
 end
+
+function string.utf8toascii(utf8_string, ascii_mapping_table)
+	-- convert/translate a UTF-8 string into its ASCII representation
+	return utf8_string:gsub('.', ascii_mapping_table)
+end

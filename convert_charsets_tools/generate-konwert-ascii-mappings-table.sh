@@ -17,16 +17,15 @@ wget -O "${WORKDIR}/konwert-filters.deb" "${URL}" \
 && ar p "${WORKDIR}/konwert-filters.deb" data.tar.xz \
 | tar -xC "${WORKDIR}" --xz ${FILES}
 
-echo "local mapping_UTF_8_to_ASCII = {"
+echo "-- adapted from ${FILES} in ${URL}"
+echo "local mapping_UNICODE_to_ASCII = {"
 
-cd "${WORKDIR}"
-
-cat ${FILES} | while read LINE; do
+( cd "${WORKDIR}" && cat ${FILES} ) | while read LINE; do
 	CHAR_UTF8=$(echo "${LINE}" | cut -f 1)
 	STR_ASCII=$(echo "${LINE}" | cut -f 2)
-	echo "	\"${CHAR_UTF8}\" = \"${STR_ASCII}\","
-done
-
-cd - >/dev/null
+	STR_ASCII_ESC_BSLASH="${STR_ASCII//\\/\\\\}" STR_ASCII_ESC_DQUOTES="${STR_ASCII_ESC_BSLASH//\"/\\\"}"
+	echo "	[\"${CHAR_UTF8}\"] = \"${STR_ASCII_ESC_DQUOTES}\","
+done | $(dirname ${0})/utf8-chars-to-unicode-codepoints.py
 
 echo "}"
+echo "return mapping_UNICODE_to_ASCII"

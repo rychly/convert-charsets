@@ -13,6 +13,7 @@ fi
 
 FILE=${URL_FILE##*/} BASENAME=${FILE%.*} NAME=${BASENAME//-/_}
 
+echo "-- adapted from ${URL_BASE}${URL_FILE}"
 echo "local mapping_${NAME}_to_UNICODE = {"
 
 echo "${MAPPING}" | while read LINE; do
@@ -27,3 +28,4 @@ echo "${MAPPING}" | while read LINE; do
 done
 
 echo "}"
+echo "return mapping_${NAME}_to_UNICODE"

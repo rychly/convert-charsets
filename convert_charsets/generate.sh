@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+## UNICODE to ASCII
+
+NAME="UNICODE_to_ASCII"
+OUT="$(dirname ${0})/${NAME}.lua"
+
+echo "Generating table for ${NAME} ..." >&2
+if [[ -e "${OUT}" ]]; then
+	echo "File ${OUT} already exists, skipping!" >&2
+else
+	$(dirname ${0})/../convert_charsets_tools/generate-konwert-ascii-mappings-table.sh > "${OUT}"
+fi
+
+## NATIVE to UNICODE
+
+TABLES="
+ISO8859/8859-1.TXT
+ISO8859/8859-2.TXT
+ISO8859/8859-3.TXT
+ISO8859/8859-4.TXT
+ISO8859/8859-5.TXT
+ISO8859/8859-6.TXT
+ISO8859/8859-7.TXT
+ISO8859/8859-8.TXT
+ISO8859/8859-9.TXT
+ISO8859/8859-10.TXT
+ISO8859/8859-11.TXT
+ISO8859/8859-13.TXT
+ISO8859/8859-14.TXT
+ISO8859/8859-15.TXT
+ISO8859/8859-16.TXT
+VENDORS/MICSFT/WINDOWS/CP874.TXT
+VENDORS/MICSFT/WINDOWS/CP932.TXT
+VENDORS/MICSFT/WINDOWS/CP936.TXT
+VENDORS/MICSFT/WINDOWS/CP949.TXT
+VENDORS/MICSFT/WINDOWS/CP950.TXT
+VENDORS/MICSFT/WINDOWS/CP1250.TXT
+VENDORS/MICSFT/WINDOWS/CP1251.TXT
+VENDORS/MICSFT/WINDOWS/CP1252.TXT
+VENDORS/MICSFT/WINDOWS/CP1253.TXT
+VENDORS/MICSFT/WINDOWS/CP1254.TXT
+VENDORS/MICSFT/WINDOWS/CP1255.TXT
+VENDORS/MICSFT/WINDOWS/CP1256.TXT
+VENDORS/MICSFT/WINDOWS/CP1257.TXT
+VENDORS/MICSFT/WINDOWS/CP1258.TXT
+"
+
+for I in ${TABLES}; do
+	FILE="${I##*/}" BASENAME="${FILE%.*}" NAME="${BASENAME//-/_}_to_UNICODE"
+	OUT="$(dirname ${0})/${NAME}.lua"
+	echo "Generating table for ${NAME} ..." >&2
+	if [[ -e "${OUT}" ]]; then
+		echo "File ${OUT} already exists, skipping!" >&2
+		continue
+	fi
+	$(dirname ${0})/../convert_charsets_tools/generate-unicode-org-mappings-table.sh "${I}" > "${OUT}"
+done

@@ -49,12 +49,22 @@ function convert_charsets.utf8_to_unicode(utf8char, pos)
 end
 
 -- create a new table with swapped key-value pairs
-function convert_charsets.reverse_mapping_table(table)
+function convert_charsets.reverse_mapping_table(mapping_table)
 	local result = {}
-	for key, value in pairs(table) do
+	for key, value in pairs(mapping_table) do
 		result[value] = key
 	end
 	return result
+end
+
+-- modify an existing table (i.e., do not create a new one) by merging with the given table (items of identical keys are not overwritten)
+function convert_charsets.do_merge_with_mapping_table(mapping_table, mapping_table_to_merge)
+	for key, value in pairs(mapping_table_to_merge) do
+		if (mapping_table[key] == nil) then
+			mapping_table[key] = value
+		end
+	end
+	return mapping_table
 end
 
 -- converts a UTF-8 string into the native encoded string by given reverse native-to-unicode mapping table (of items "[codepoint] = code" or "[codepoint] = 'string'")
@@ -125,6 +135,7 @@ end
 -- normalize charset names
 function convert_charsets.normalize_charset_name(charset)
 	local charset_names = {
+		["GSM"] = "GSM0338",
 		-- cstools:cstocs
 		["UTF8"] = "UTF_8",
 		["IL1"] = "8859_1",
@@ -282,6 +293,7 @@ function convert_charsets.main(arg)
 		stderr:write("Usage: " .. arg[0] .. " -f <from_charset> -t <to_charset> [input_file...] [-o <output_file>]\n")
 		stderr:write("Usage: " .. arg[0] .. " --from-code=<from_charset> --to-code=<to_charset> [input_file...] [--output=<output_file>]\n")
 		stderr:write("Converts given input file(s) (or the standard input stream) to a given output file (or the standard output stream) from the first given charset to the second given charset encodings.\n")
+		stderr:write("The charset encodings can be combined by '+' operator, e.g., 'utf8-gsm+ascii' will convert from UTF-8 to GSM with fallback to UTF-8 to ASCII form chars not in GSM.\n")
 		return 1
 	end
 	-- parse optargs
@@ -321,10 +333,13 @@ function convert_charsets.main(arg)
 		return 2
 	end
 	-- prepare charsets
-	opt_from_code = opt_from_code:upper():gsub("-", "_")
-	opt_to_code = opt_to_code:upper():gsub("-", "_")
-	local filter_from = convert_charsets.get_mapping_table_to_utf8(convert_charsets.normalize_charset_name(opt_from_code))
-	local filter_to = convert_charsets.get_mapping_table_from_utf8(convert_charsets.normalize_charset_name(opt_to_code))
+	local filter_to, filter_from = {}, {}
+	for opt_from_code_single in opt_from_code:upper():gsub("-", "_"):gmatch("[^+]+") do
+		convert_charsets.do_merge_with_mapping_table(filter_from, convert_charsets.get_mapping_table_to_utf8(convert_charsets.normalize_charset_name(opt_from_code_single)))
+	end
+	for opt_to_code_single in opt_to_code:upper():gsub("-", "_"):gmatch("[^+]+") do
+		convert_charsets.do_merge_with_mapping_table(filter_to, convert_charsets.get_mapping_table_from_utf8(convert_charsets.normalize_charset_name(opt_to_code_single)))
+	end
 	-- process files
 	local file_out = (opt_output == "-") and stdout or assert(open(opt_output, "w"))
 	for _, opt_input_single in ipairs((#opt_input > 0) and opt_input or {"-"}) do
@@ -346,5 +361,6 @@ end
 string.from_utf8 = convert_charsets.from_utf8
 string.to_utf8 = convert_charsets.to_utf8
 table.swap_keys_and_vals = convert_charsets.reverse_mapping_table
+table.add_merge_with = convert_charsets.do_merge_with_mapping_table
 
 return convert_charsets

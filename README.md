@@ -1,14 +1,19 @@
 # Convert Strings between Charsets in Lua
 
-Lua scripts to convert strings between UTF-8 and other charsets and from UTF-8 to ASCII.
+Lua scripts to convert strings between UTF-8 and other charsets and from UTF-8 to ASCII and SGML.
 
 ## Shell Script `convert_charsets*.sh`
 
-Usage `./convert_charsets-nix.sh <from_charset>-<to_charset> [input_file] [output_file]`
+### Usage
 
-Converts a given input file (or the standard input stream) to a given output file (or the standard output stream) from the first given charset to the second given charset.
+*	`./convert_charsets-nix.sh <from_charset>-<to_charset> [input_file...] [-o <output_file>]`
+*	`./convert_charsets-nix.sh -f <from_charset> -t <to_charset> [input_file...] [-o <output_file>]`
+*	`./convert_charsets-nix.sh --from-code=<from_charset> --to-code=<to_charset> [input_file...] [--output=<output_file>]`
 
-Example:
+Converts given input file(s) (or the standard input stream) to a given output file (or the standard output stream) from the first given charset to the second given charset encodings.
+The charset encodings can be combined by '+' operator, e.g., 'utf8-gsm+ascii' will convert from UTF-8 to GSM with fallback to UTF-8 to ASCII form chars not in GSM.
+
+### Example
 
 ~~~
 echo "příliš žluťoučký kůň" $'\n' "pěl ďábelské ódy" | ./convert_charsets-nix.sh utf_8-8859_2 | ./convert_charsets-nix.sh 8859_2-cp1250 | ./convert_charsets-nix.sh cp1250-ascii

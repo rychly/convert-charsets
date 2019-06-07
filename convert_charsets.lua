@@ -134,6 +134,7 @@ end
 
 -- normalize charset names
 function convert_charsets.normalize_charset_name(charset)
+	local correct_charset = (type(charset) == 'string') and charset:gsub("-", "_"):upper() or charset
 	local charset_names = {
 		["GSM"] = "GSM0338",
 		-- cstools:cstocs
@@ -275,7 +276,7 @@ function convert_charsets.normalize_charset_name(charset)
 		["WINDOWS_1257"] = "CP1257",
 		["WINDOWS_1258"] = "CP1258",
 	}
-	return charset_names[charset] or charset
+	return charset_names[correct_charset] or correct_charset
 end
 
 -- convert string between charsets
@@ -334,10 +335,10 @@ function convert_charsets.main(arg)
 	end
 	-- prepare charsets
 	local filter_to, filter_from = {}, {}
-	for opt_from_code_single in opt_from_code:upper():gsub("-", "_"):gmatch("[^+]+") do
+	for opt_from_code_single in opt_from_code:gmatch("[^+]+") do
 		convert_charsets.do_merge_with_mapping_table(filter_from, convert_charsets.get_mapping_table_to_utf8(convert_charsets.normalize_charset_name(opt_from_code_single)))
 	end
-	for opt_to_code_single in opt_to_code:upper():gsub("-", "_"):gmatch("[^+]+") do
+	for opt_to_code_single in opt_to_code:gmatch("[^+]+") do
 		convert_charsets.do_merge_with_mapping_table(filter_to, convert_charsets.get_mapping_table_from_utf8(convert_charsets.normalize_charset_name(opt_to_code_single)))
 	end
 	-- process files

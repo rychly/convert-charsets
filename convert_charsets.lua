@@ -9,13 +9,18 @@ local table_insert, table_concat = table.insert, table.concat
 local unpack = table.unpack or unpack
 
 -- Module declaration
-local convert_charsets = {} -- Public namespace
-local convert_charsets_private = {} -- Private namespace
+local _M = {}
 
 -- PUBLIC FUNCTIONS
 
+-- Module
+
+-- module names for mapping tables
+_M.module_name_for_mapping_from_unicode = "convert_charsets.UNICODE_to_%s"
+_M.module_name_for_mapping_to_unicode = "convert_charsets.%s_to_UNICODE"
+
 -- converts a numeric UTF code (U+code) to the UTF-8 character
-function convert_charsets.unicode_to_utf8(code)
+function _M.unicode_to_utf8(code)
 	local t, h = {}, 128
 	while code >= h do
 		t[#t+1] = 128 + code%64
@@ -27,7 +32,7 @@ function convert_charsets.unicode_to_utf8(code)
 end
 
 -- converts an UTF-8 character into the numeric UTF code (U+code) and the number of its bytes
-function convert_charsets.utf8_to_unicode(utf8char, pos)
+function _M.utf8_to_unicode(utf8char, pos)
 	-- pos = starting byte position inside input string (default 1)
 	pos = pos or 1
 	local code, size = utf8char:byte(pos), 1
@@ -49,7 +54,7 @@ function convert_charsets.utf8_to_unicode(utf8char, pos)
 end
 
 -- create a new table with swapped key-value pairs
-function convert_charsets.reverse_mapping_table(mapping_table)
+function _M.reverse_mapping_table(mapping_table)
 	local result = {}
 	for key, value in pairs(mapping_table) do
 		result[value] = key
@@ -58,7 +63,7 @@ function convert_charsets.reverse_mapping_table(mapping_table)
 end
 
 -- modify an existing table (i.e., do not create a new one) by merging with the given table (items of identical keys are not overwritten)
-function convert_charsets.do_merge_with_mapping_table(mapping_table, mapping_table_to_merge)
+function _M.do_merge_with_mapping_table(mapping_table, mapping_table_to_merge)
 	for key, value in pairs(mapping_table_to_merge) do
 		if (mapping_table[key] == nil) then
 			mapping_table[key] = value
@@ -68,13 +73,13 @@ function convert_charsets.do_merge_with_mapping_table(mapping_table, mapping_tab
 end
 
 -- converts a UTF-8 string into the native encoded string by given reverse native-to-unicode mapping table (of items "[codepoint] = code" or "[codepoint] = 'string'")
-function convert_charsets.from_utf8(utf8_string, reverse_unicode_mapping_table)
+function _M.from_utf8(utf8_string, reverse_unicode_mapping_table)
 	if ((reverse_unicode_mapping_table == nil) or (next(reverse_unicode_mapping_table) == nil)) then
 		return utf8_string
 	else
 		local pos, result_native = 1, {}
 		while pos <= #utf8_string do
-			local code, size = convert_charsets.utf8_to_unicode(utf8_string, pos)
+			local code, size = _M.utf8_to_unicode(utf8_string, pos)
 			pos = pos + size
 			code = code < 128 and code or reverse_unicode_mapping_table[code] or ('?'):byte()
 			table_insert(result_native, type(code) == "number" and char(code) or code)
@@ -84,7 +89,7 @@ function convert_charsets.from_utf8(utf8_string, reverse_unicode_mapping_table)
 end
 
 -- converts a native encoded string into the UTF-8 string by given native-to-unicode mapping table
-function convert_charsets.to_utf8(native_string, unicode_mapping_table)
+function _M.to_utf8(native_string, unicode_mapping_table)
 	if ((unicode_mapping_table == nil) or (next(unicode_mapping_table) == nil)) then
 		return native_string
 	else
@@ -105,7 +110,7 @@ function convert_charsets.to_utf8(native_string, unicode_mapping_table)
 			end
 			-- unicode can be a single number, an array of numbers, or single/array of chars
 			for _, unicode_char in ipairs(type(unicode) == "table" and unicode or { unicode }) do
-				table_insert(result_utf8, type(unicode_char) == "number" and convert_charsets.unicode_to_utf8(unicode_char) or unicode_char)
+				table_insert(result_utf8, type(unicode_char) == "number" and _M.unicode_to_utf8(unicode_char) or unicode_char)
 			end
 		end
 		return table_concat(result_utf8)
@@ -113,27 +118,27 @@ function convert_charsets.to_utf8(native_string, unicode_mapping_table)
 end
 
 -- get a mapping table going from utf-8 to a given charset
-function convert_charsets.get_mapping_table_from_utf8(to_charset)
+function _M.get_mapping_table_from_utf8(to_charset)
 	if (to_charset == "UTF_8") then
 		return {}
 	elseif ((to_charset == "ASCII") or (to_charset == "SGML")) then
-		return require("convert_charsets.UNICODE_to_" .. to_charset)
+		return require(_M.module_name_for_mapping_from_unicode:format(to_charset))
 	else
-		return convert_charsets.reverse_mapping_table(require("convert_charsets." .. to_charset .. "_to_UNICODE"))
+		return _M.reverse_mapping_table(require(_M.module_name_for_mapping_to_unicode:format(to_charset)))
 	end
 end
 
 -- get a mapping table going from a given charset to utf-8
-function convert_charsets.get_mapping_table_to_utf8(from_charset)
+function _M.get_mapping_table_to_utf8(from_charset)
 	if (from_charset == "UTF_8") then
 		return {}
 	else
-		return require("convert_charsets." .. from_charset .. "_to_UNICODE")
+		return require(_M.module_name_for_mapping_to_unicode:format(from_charset))
 	end
 end
 
 -- normalize charset names
-function convert_charsets.normalize_charset_name(charset)
+function _M.normalize_charset_name(charset)
 	local correct_charset = (type(charset) == 'string') and charset:gsub("-", "_"):upper() or charset
 	local charset_names = {
 		["GSM"] = "GSM0338",
@@ -280,15 +285,15 @@ function convert_charsets.normalize_charset_name(charset)
 end
 
 -- convert string between charsets
-function convert_charsets.convert_charsets(input_string, from_charset, to_charset)
-	local to_utf8_mapping_table = (type(from_charset) == "table") and from_charset or convert_charsets.get_mapping_table_to_utf8(convert_charsets.normalize_charset_name(from_charset))
-	local from_utf8_mapping_table = (type(to_charset) == "table") and to_charset or convert_charsets.get_mapping_table_from_utf8(convert_charsets.normalize_charset_name(to_charset))
-	local input_string_in_utf8 = convert_charsets.to_utf8(input_string, to_utf8_mapping_table)
-	return convert_charsets.from_utf8(input_string_in_utf8, from_utf8_mapping_table)
+function _M.convert_charsets(input_string, from_charset, to_charset)
+	local to_utf8_mapping_table = (type(from_charset) == "table") and from_charset or _M.get_mapping_table_to_utf8(_M.normalize_charset_name(from_charset))
+	local from_utf8_mapping_table = (type(to_charset) == "table") and to_charset or _M.get_mapping_table_from_utf8(_M.normalize_charset_name(to_charset))
+	local input_string_in_utf8 = _M.to_utf8(input_string, to_utf8_mapping_table)
+	return _M.from_utf8(input_string_in_utf8, from_utf8_mapping_table)
 end
 
--- main method for CLI
-function convert_charsets.main(arg)
+-- a main method for CLI
+function _M.main(arg)
 	if (#arg == 0 or arg[#arg] == "--help") then
 		stderr:write("Usage: " .. arg[0] .. " <from_charset>-<to_charset> [input_file...] [-o <output_file>]\n")
 		stderr:write("Usage: " .. arg[0] .. " -f <from_charset> -t <to_charset> [input_file...] [-o <output_file>]\n")
@@ -336,10 +341,10 @@ function convert_charsets.main(arg)
 	-- prepare charsets
 	local filter_to, filter_from = {}, {}
 	for opt_from_code_single in opt_from_code:gmatch("[^+]+") do
-		convert_charsets.do_merge_with_mapping_table(filter_from, convert_charsets.get_mapping_table_to_utf8(convert_charsets.normalize_charset_name(opt_from_code_single)))
+		_M.do_merge_with_mapping_table(filter_from, _M.get_mapping_table_to_utf8(_M.normalize_charset_name(opt_from_code_single)))
 	end
 	for opt_to_code_single in opt_to_code:gmatch("[^+]+") do
-		convert_charsets.do_merge_with_mapping_table(filter_to, convert_charsets.get_mapping_table_from_utf8(convert_charsets.normalize_charset_name(opt_to_code_single)))
+		_M.do_merge_with_mapping_table(filter_to, _M.get_mapping_table_from_utf8(_M.normalize_charset_name(opt_to_code_single)))
 	end
 	-- process files
 	local file_out = (opt_output == "-") and stdout or assert(open(opt_output, "w"))
@@ -350,7 +355,7 @@ function convert_charsets.main(arg)
 			if (line == nil) then
 				break
 			else
-				file_out:write(convert_charsets.convert_charsets(line, filter_from, filter_to) .. "\n")
+				file_out:write(_M.convert_charsets(line, filter_from, filter_to) .. "\n")
 			end
 		end
 		file_in:close()
@@ -359,9 +364,9 @@ function convert_charsets.main(arg)
 	return 0
 end
 
-string.from_utf8 = convert_charsets.from_utf8
-string.to_utf8 = convert_charsets.to_utf8
-table.swap_keys_and_vals = convert_charsets.reverse_mapping_table
-table.add_merge_with = convert_charsets.do_merge_with_mapping_table
+string.from_utf8 = _M.from_utf8
+string.to_utf8 = _M.to_utf8
+table.swap_keys_and_vals = _M.reverse_mapping_table
+table.add_merge_with = _M.do_merge_with_mapping_table
 
-return convert_charsets
+return _M

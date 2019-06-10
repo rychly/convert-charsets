@@ -280,6 +280,8 @@ function _M.normalize_charset_name(charset)
 		["WINDOWS_1256"] = "CP1256",
 		["WINDOWS_1257"] = "CP1257",
 		["WINDOWS_1258"] = "CP1258",
+		-- mime
+		["US_ASCII"] = "ASCII",
 	}
 	return charset_names[correct_charset] or correct_charset
 end

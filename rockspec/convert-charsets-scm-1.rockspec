@@ -1,4 +1,4 @@
-package = "convert_charsets"
+package = "convert-charsets"
 version = "scm-1"
 source = {
 	url = "git+https://gitlab.com/rychly/convert-charsets.git",

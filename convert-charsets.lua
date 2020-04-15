@@ -16,8 +16,8 @@ local _M = {}
 -- Module
 
 -- module names for mapping tables
-_M.module_name_for_mapping_from_unicode = "convert_charsets.UNICODE_to_%s"
-_M.module_name_for_mapping_to_unicode = "convert_charsets.%s_to_UNICODE"
+_M.module_name_for_mapping_from_unicode = "convert-charsets.UNICODE_to_%s"
+_M.module_name_for_mapping_to_unicode = "convert-charsets.%s_to_UNICODE"
 
 -- converts a numeric UTF code (U+code) to the UTF-8 character
 function _M.unicode_to_utf8(code)

@@ -9,7 +9,7 @@ echo "Generating table for ${NAME} ..." >&2
 if [[ -e "${OUT}" ]]; then
 	echo "File ${OUT} already exists, skipping!" >&2
 else
-	$(dirname ${0})/../convert_charsets_tools/generate-konwert-ascii-mappings-table.sh > "${OUT}"
+	$(dirname ${0})/../convert-charsets-tools/generate-konwert-ascii-mappings-table.sh > "${OUT}"
 fi
 
 ## UNICODE to SGML
@@ -21,7 +21,7 @@ echo "Generating table for ${NAME} ..." >&2
 if [[ -e "${OUT}" ]]; then
 	echo "File ${OUT} already exists, skipping!" >&2
 else
-	$(dirname ${0})/../convert_charsets_tools/generate-unicode-org-mappings-table-sgml.sh > "${OUT}"
+	$(dirname ${0})/../convert-charsets-tools/generate-unicode-org-mappings-table-sgml.sh > "${OUT}"
 fi
 
 ## NATIVE to UNICODE
@@ -111,5 +111,5 @@ for I in ${TABLES}; do
 		echo "File ${OUT} already exists, skipping!" >&2
 		continue
 	fi
-	$(dirname ${0})/../convert_charsets_tools/generate-unicode-org-mappings-table.sh "${I%%:*}" ${NAME_PREFIX} > "${OUT}"
+	$(dirname ${0})/../convert-charsets-tools/generate-unicode-org-mappings-table.sh "${I%%:*}" ${NAME_PREFIX} > "${OUT}"
 done
